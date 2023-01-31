@@ -1,61 +1,110 @@
 <script lang="ts">
-  import Carousel from "../lib/Carousel.svelte";
-  import Section from "../lib/Section.svelte";
-  import { styles } from "./util";
+  import { writable } from "svelte/store";
 
-  type SectionType = { id: number; ref: undefined | HTMLElement };
+  const Size = {
+    Small: 33,
+    Medium: 66,
+    Large: 100,
+  };
+  const articles = new Array(5).fill(undefined).map((_, i) => ({ id: i + 1 }));
+  const articleSizes = writable(
+    articles.reduce((acc, { id }) => ({ ...acc, [id]: Size.Small }), {})
+  );
 
-  const sections: SectionType[] = Array(5)
-    .fill(null)
-    .map((_, id) => ({ id, ref: undefined }));
-  let activeId = sections[0].id;
-  let ref;
-  const width = `560px`;
-  const height = `400px`;
-
-  function onSelectActive(section: SectionType) {
-    const { id, ref } = section;
-    activeId = id;
-    ref.scrollLeft = ref.offsetLeft;
-  }
+  const focusedArticle = writable(1);
 </script>
 
 <main>
-  <menu>
-    {#each sections as section}
-      <li>
-        <button
-          class:active={section.id === activeId}
-          on:click={() => onSelectActive(section)}
-        >
-          {section.id}
-        </button>
+  <nav>
+    <menu>
+      {#each articles as { id } (id)}
+        <li>
+          <a
+            href={`#${id}`}
+            class:focused={id === $focusedArticle}
+            on:click={() => ($focusedArticle = id)}
+          >
+            Section {id}
+          </a>
+        </li>
+      {/each}
+    </menu>
+  </nav>
+  <ol>
+    {#each articles as { id } (id)}
+      <li
+        style={`min-width:${Size.Small}vw;flex-basis:${$articleSizes[id]}vw;`}
+        class:focused={id === $focusedArticle}
+        class:next={id === $focusedArticle + 1}
+        on:click={() => ($focusedArticle = id)}
+      >
+        <article>
+          <header>
+            <h1>Section {id}</h1>
+            <select
+              on:change={(e) =>
+                ($articleSizes = {
+                  ...$articleSizes,
+                  [id]: parseInt(e.target.value),
+                })}
+            >
+              {#each Object.entries(Size) as [key, value]}
+                <option {value}>{key}</option>
+              {/each}
+            </select>
+          </header>
+        </article>
       </li>
     {/each}
-  </menu>
-  <Carousel bind:this={ref} style={styles({ width, height })}>
-    {#each sections as section}
-      <Section bind:this={section.ref} active={section.id === activeId}>
-        Section {section.id}
-      </Section>
-    {/each}
-  </Carousel>
+  </ol>
 </main>
 
 <style lang="css">
   main {
-    background-color: gray;
+    background-color: pink;
   }
 
   menu {
-    list-style: none;
+    display: flex;
+    list-style-type: none;
     margin: 0;
     padding: 0;
-    display: flex;
-    gap: 0.25em;
+    justify-content: space-evenly;
   }
 
-  .active {
+  ol {
+    background-color: lightgreen;
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    max-width: 100%;
+    overflow-x: scroll;
+    display: flex;
+  }
+
+  ol li {
     background-color: lightblue;
+    transition-property: flex-basis;
+    transition-duration: 1s;
+    transition-timing-function: ease-in;
+    flex: 1 1;
+  }
+
+  ol li header {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+  }
+
+  ol li:hover {
+    box-sizing: border-box;
+    border: 3px dotted blue;
+    z-index: 1;
+  }
+
+  ol li.focused {
+    border: 3px solid darkblue;
+    z-index: 2;
+    flex: 0 0;
   }
 </style>
