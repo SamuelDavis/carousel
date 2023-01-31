@@ -1,5 +1,5 @@
 #!/usr/bin/env sh
-REPO_NAME=responsive-carousel
+REPO_NAME=carousel
 
 # abort on errors
 set -e
